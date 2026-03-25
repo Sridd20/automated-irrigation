@@ -12,11 +12,11 @@ const dynamo = new AWS.DynamoDB.DocumentClient({
 export async function GET() {
   try {
     const data = await dynamo.scan({
-      TableName: "IrrigationStatus"
+      TableName: "IrrigationLogs"
     }).promise();
     return NextResponse.json(data.Items);
   } catch (error: any) {
-    console.error("DynamoDB Status Fetch Error:", error);
-    return NextResponse.json({ error: "Failed to fetch status: " + error.message }, { status: 500 });
+    console.error("DynamoDB History Fetch Error:", error);
+    return NextResponse.json({ error: "Failed to fetch history: " + error.message }, { status: 500 });
   }
 }

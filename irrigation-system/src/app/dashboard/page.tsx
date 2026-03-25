@@ -16,38 +16,49 @@ export default function DashboardPage() {
     const MIN_THRESHOLD = 30;
     const MAX_THRESHOLD = 80;
 
-    // --- Automation Logic (The Core "Cloud" Logic) ---
+    // --- Real Cloud Logic via Next.js API ---
     useEffect(() => {
-        if (!autoMode) return; // Skip if manual override
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch("/api/status");
+                const data = await res.json();
+                
+                // Example logic to find Zone A status
+                if (data && data.length > 0) {
+                    const zoneStatus = data.find((item: any) => item.zone === "zone1") || data[0];
+                    if (zoneStatus) {
+                        setMoisture(Number(zoneStatus.moisture) || 0);
+                        setIsIrrigating(zoneStatus.status === "START_WATER");
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch status:", error);
+            }
+        };
 
-        if (moisture < MIN_THRESHOLD && !isIrrigating) {
-            console.log("Auto-Start Irrigation");
-            setIsIrrigating(true);
-        } else if (moisture >= MAX_THRESHOLD && isIrrigating) {
-            console.log("Auto-Stop Irrigation");
-            setIsIrrigating(false);
-        }
-    }, [moisture, isIrrigating, autoMode]);
-
-    // --- Simulation Helpers ---
-    const simulateDrying = () => {
-        setMoisture(prev => Math.max(0, prev - 5));
-    };
-
-    const simulateWatering = () => {
-        setMoisture(prev => Math.min(100, prev + 5));
-    };
-
-    // Effect to simulate active irrigation increasing moisture over time
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isIrrigating) {
-            interval = setInterval(() => {
-                setMoisture(prev => Math.min(100, prev + 2));
-            }, 1000);
-        }
+        fetchStatus(); // Initial fetch
+        const interval = setInterval(fetchStatus, 3000); // Poll every 3 seconds
+        
         return () => clearInterval(interval);
-    }, [isIrrigating]);
+    }, []);
+
+    const handleControl = async (command: string) => {
+        try {
+            // Optimistic update
+            setIsIrrigating(command === "START_WATER");
+            
+            await fetch("/api/control", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ zone: "zone1", command })
+            });
+        } catch (error) {
+            console.error("Failed to send command:", error);
+        }
+    };
+
 
     return (
         <div className="space-y-6">
@@ -94,14 +105,14 @@ export default function DashboardPage() {
                     {!autoMode ? (
                         <div className="grid grid-cols-2 gap-3">
                             <button
-                                onClick={() => setIsIrrigating(true)}
+                                onClick={() => handleControl("START_WATER")}
                                 disabled={isIrrigating}
                                 className="flex items-center justify-center gap-2 h-14 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 hover:bg-primary/90 transition-all"
                             >
                                 <Play className="h-5 w-5 fill-current" /> Start
                             </button>
                             <button
-                                onClick={() => setIsIrrigating(false)}
+                                onClick={() => handleControl("STOP_WATER")}
                                 disabled={!isIrrigating}
                                 className="flex items-center justify-center gap-2 h-14 rounded-xl bg-destructive text-destructive-foreground font-medium disabled:opacity-50 hover:bg-destructive/90 transition-all"
                             >
@@ -115,20 +126,9 @@ export default function DashboardPage() {
                     )}
 
                     <div className="mt-4 pt-4 border-t border-border/50">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Simulation Tools</h4>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={simulateDrying}
-                                className="flex-1 py-2 px-3 rounded-lg bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 text-xs font-medium transition-colors border border-amber-500/20"
-                            >
-                                Simulate Dry (-5%)
-                            </button>
-                            <button
-                                onClick={simulateWatering}
-                                className="flex-1 py-2 px-3 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 text-xs font-medium transition-colors border border-blue-500/20"
-                            >
-                                Simulate Rain (+5%)
-                            </button>
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Live Feed Active</h4>
+                        <div className="flex gap-2 text-xs text-muted-foreground">
+                            Connected to AWS IoT Core + DynamoDB. UI will automatically sync.
                         </div>
                     </div>
                 </div>
