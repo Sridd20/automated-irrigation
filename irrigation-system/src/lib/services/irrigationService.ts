@@ -1,61 +1,34 @@
-import { CropConfig, INITIAL_CROPS, SensorData, SystemStatus } from '../types';
+import { CropConfig, INITIAL_CROPS, SystemStatus } from '../types';
 
-// In-memory store (Simulating Database)
+// In-memory store fallback (Simulating Database if API fails or for generic data)
 const crops: CropConfig[] = [...INITIAL_CROPS];
-const systemStatus: SystemStatus = {
-    zones: {
-        'zone-1': { isIrrigating: false, lastActive: null, currentMoisture: 50 },
-        'zone-2': { isIrrigating: false, lastActive: null, currentMoisture: 70 },
-    },
-    lastUpdated: new Date().toISOString(),
-};
-
-// Simulate Sensor Data changes
-const simulateMoistureChange = () => {
-    const zones = Object.keys(systemStatus.zones);
-    zones.forEach((zoneId) => {
-        const zone = systemStatus.zones[zoneId];
-        const crop = crops.find((c) => c.zoneId === zoneId);
-
-        if (!crop) return;
-
-        // Simulate moisture change
-        // If irrigating, moisture increases rapidly
-        // If not, moisture decreases slowly (evaporation)
-        let change = 0;
-        if (zone.isIrrigating) {
-            change = Math.random() * 5 + 2; // +2% to +7% per tick
-        } else {
-            change = -(Math.random() * 2 + 0.5); // -0.5% to -2.5% per tick
-        }
-
-        const newMoisture = Math.max(0, Math.min(100, zone.currentMoisture + change));
-
-        // Automated Control Logic
-        let isIrrigating = zone.isIrrigating;
-        if (newMoisture < crop.minThreshold) {
-            isIrrigating = true;
-        } else if (newMoisture >= crop.maxThreshold) {
-            isIrrigating = false;
-        }
-
-        systemStatus.zones[zoneId] = {
-            ...zone,
-            currentMoisture: parseFloat(newMoisture.toFixed(1)),
-            isIrrigating,
-            lastActive: isIrrigating ? new Date().toISOString() : zone.lastActive,
-        };
-    });
-    systemStatus.lastUpdated = new Date().toISOString();
-};
-
-// Run simulation tick every time status is requested (for simplicity in serverless environment)
-// In a real app, this would be a background job or actual sensor push.
 
 export const IrrigationService = {
     getStatus: async (): Promise<SystemStatus> => {
-        simulateMoistureChange(); // Trigger a simulation tick on fetch
-        return systemStatus;
+        try {
+            const res = await fetch("/api/status");
+            const data = await res.json();
+            
+            // Format data into SystemStatus format for any lingering old components
+            const zones: Record<string, any> = {};
+            if (Array.isArray(data)) {
+                data.forEach((status: any) => {
+                    zones[status.zone] = {
+                        isIrrigating: status.status === "START_WATER",
+                        lastActive: status.lastUpdated,
+                        currentMoisture: status.moisture
+                    };
+                });
+            }
+            
+            return {
+                zones,
+                lastUpdated: new Date().toISOString()
+            };
+        } catch (error) {
+            console.warn("API status fetch failed:", error);
+            return { zones: {}, lastUpdated: new Date().toISOString() };
+        }
     },
 
     getCrops: async (): Promise<CropConfig[]> => {
@@ -71,11 +44,17 @@ export const IrrigationService = {
         throw new Error('Crop not found');
     },
 
-    toggleIrrigation: async (zoneId: string, state: boolean): Promise<SystemStatus> => {
-        if (systemStatus.zones[zoneId]) {
-            systemStatus.zones[zoneId].isIrrigating = state;
-            // Forced state change
+    toggleIrrigation: async (zoneId: string, state: boolean): Promise<any> => {
+        try {
+            const res = await fetch("/api/control", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ zone: zoneId, command: state ? "START_WATER" : "STOP_WATER" })
+            });
+            return await res.json();
+        } catch (error) {
+            console.error("Failed to sync toggle with API:", error);
+            throw error;
         }
-        return systemStatus;
     }
 };

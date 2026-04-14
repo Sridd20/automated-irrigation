@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌱 Automated Irrigation System
 
-## Getting Started
+A real-time, AWS-integrated web dashboard for monitoring and managing an automated irrigation system. Built with Next.js, React, Tailwind CSS, and the AWS SDK.
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Live Moisture Monitoring:** Real-time updates of soil moisture levels across different zones.
+- **Automated Pump Control:** System automatically toggles the water pump based on configured moisture thresholds.
+- **AWS Integration:** Uses **AWS DynamoDB** for real-time telemetry tracking and **AWS IoT Core** for device management.
+- **Interactive UI:** Smooth transitions using Framer Motion and a responsive, glass-morphic design interface.
+- **Live Simulation:** Includes a built-in AWS polling simulation script to test live updates directly on the dashboard.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend:** [Next.js](https://nextjs.org/) (App Router), React 19, Tailwind CSS v4, Framer Motion, Lucide React
+- **Cloud/Backend:** AWS SDK (`@aws-sdk/client-dynamodb`, `@aws-sdk/client-iot-data-plane`)
+- **Tooling:** TypeScript, ESLint, PostCSS
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+- Node.js (v20+ recommended)
+- AWS Account with DynamoDB and IoT Core setup
+- AWS Credentials configured locally (or via `.env.local`)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Clone the repository and install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+2. **Configure Environment Variables:**
+   Rename `.env.example` to `.env.local` and add your AWS credentials:
+   ```env
+   AWS_REGION=ap-south-1
+   AWS_ACCESS_KEY_ID=your_access_key_id
+   AWS_SECRET_ACCESS_KEY=your_secret_access_key
+   ```
+   *Note: Ensure your access keys have proper IAM permissions to write to your `IrrigationStatus` DynamoDB table.*
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Run the Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. The root site will automatically redirect to the secure login page.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧪 Running the AWS Simulation
+
+You can run a local simulation to watch the dashboard update in real-time. This script mocks a dry plant absorbing water, pumping moisture updates to AWS DynamoDB every 5 seconds until it hits a target threshold.
+
+1. Ensure your Next.js development server is running and you are viewing your Dashboard (`http://localhost:3000/dashboard`).
+2. Run the simulation script in a separate terminal:
+   ```bash
+   node test-db.js
+   ```
+3. Watch the Next.js Dashboard components (like the Moisture Gauge and Irrigation Status) update and animate live as the moisture reaches the 60% threshold!
+
+## 📂 Project Structure
+
+- **`/src/app`** - Next.js App Router endpoints, including `/login`, `/dashboard`, and `/api/status/route.ts` API routes.
+- **`/src/components`** - Reusable UI elements (`MoistureGauge`, `IrrigationStatus`).
+- **`test-db.js`** - Script to simulate live IoT device data pushed to DynamoDB.
+- **`package.json`** - Project dependencies and scripts.
+
+---
+*Created for the Automated Irrigation System project.*
