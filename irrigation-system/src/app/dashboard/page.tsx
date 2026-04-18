@@ -28,7 +28,6 @@ export default function DashboardPage() {
 
   const activeCrop = crops.find(c => c.id === selectedZoneId) || crops[0];
 
-<<<<<<< HEAD
   useEffect(() => {
     if (crops.length > 0 && (!selectedZoneId || !crops.find(c => c.id === selectedZoneId))) {
       setSelectedZoneId(crops[0].id);
@@ -42,63 +41,45 @@ export default function DashboardPage() {
   const [isIrrigating, setIsIrrigating] = useState(false);
   const [autoMode, setAutoMode] = useState(true);
 
-  // Reset state when zone changes
+  // --- Real Cloud Logic via Next.js API ---
   useEffect(() => {
-    setMoisture(MIN_THRESHOLD + 10);
-    setIsIrrigating(false);
-  }, [selectedZoneId, MIN_THRESHOLD]);
-
-  // Automation logic
-  useEffect(() => {
-    if (!autoMode) return;
-    if (moisture < MIN_THRESHOLD && !isIrrigating) setIsIrrigating(true);
-    else if (moisture >= MAX_THRESHOLD && isIrrigating) setIsIrrigating(false);
-  }, [moisture, isIrrigating, autoMode]);
-=======
-    // --- Real Cloud Logic via Next.js API ---
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const res = await fetch("/api/status");
-                const data = await res.json();
-                
-                // Example logic to find Zone A status
-                if (data && data.length > 0) {
-                    const zoneStatus = data.find((item: any) => item.zone === "zone1") || data[0];
-                    if (zoneStatus) {
-                        setMoisture(Number(zoneStatus.moisture) || 0);
-                        setIsIrrigating(zoneStatus.status === "START_WATER");
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch status:", error);
-            }
-        };
-
-        fetchStatus(); // Initial fetch
-        const interval = setInterval(fetchStatus, 3000); // Poll every 3 seconds
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
         
-        return () => clearInterval(interval);
-    }, []);
-
-    const handleControl = async (command: string) => {
-        try {
-            // Optimistic update
-            setIsIrrigating(command === "START_WATER");
-            
-            await fetch("/api/control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ zone: "zone1", command })
-            });
-        } catch (error) {
-            console.error("Failed to send command:", error);
+        if (data && data.length > 0) {
+          const activeZoneKey = activeCrop?.zone?.toLowerCase() || "zone1";
+          const zoneStatus = data.find((item: any) => item.zone === activeZoneKey || item.zone === "zone1") || data[0];
+          
+          if (zoneStatus) {
+            setMoisture(Number(zoneStatus.moisture) || 0);
+            setIsIrrigating(zoneStatus.status === "START_WATER");
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch status:", error);
+      }
     };
 
->>>>>>> d7ad833383c7651a2999c01d70272c99c3b1a484
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 3000);
+    return () => clearInterval(interval);
+  }, [activeCrop?.zone]);
+
+  const handleControl = async (command: string) => {
+    try {
+      setIsIrrigating(command === "START_WATER");
+      const activeZoneKey = activeCrop?.zone?.toLowerCase() || "zone1";
+      await fetch("/api/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ zone: activeZoneKey, command })
+      });
+    } catch (error) {
+      console.error("Failed to send command:", error);
+    }
+  };
 
   // Simulate active irrigation
   useEffect(() => {
@@ -169,7 +150,6 @@ export default function DashboardPage() {
                       <span>Zone {crop.zone} <span className="opacity-60 ml-1 font-normal">({crop.name})</span></span>
                       {selectedZoneId === crop.id && <Check size={14} />}
                     </button>
-<<<<<<< HEAD
                   ))}
                   {crops.length === 0 && (
                     <span className="px-3 py-2 text-sm text-[var(--muted-foreground)]">No zones configured</span>
@@ -187,92 +167,6 @@ export default function DashboardPage() {
           <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
             Real-time monitoring · {activeCrop?.name || 'No'} crop · Last sync 12s ago
           </p>
-=======
-                    <button
-                        onClick={() => setAutoMode(false)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!autoMode ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                        Manual
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Card 1: Gauge */}
-                <div className="col-span-1">
-                    <MoistureGauge value={moisture} />
-                </div>
-
-                {/* Card 2: Status */}
-                <div className="col-span-1">
-                    <IrrigationStatus isActive={isIrrigating} manualOverride={!autoMode} />
-                </div>
-
-                {/* Card 3: Controls / Actions */}
-                <div className="col-span-1 rounded-3xl p-6 glass-panel flex flex-col justify-center gap-4">
-                    <h3 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
-                        <Settings2 className="h-5 w-5" />
-                        Controls
-                    </h3>
-
-                    {!autoMode ? (
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={() => handleControl("START_WATER")}
-                                disabled={isIrrigating}
-                                className="flex items-center justify-center gap-2 h-14 rounded-xl bg-primary text-primary-foreground font-medium disabled:opacity-50 hover:bg-primary/90 transition-all"
-                            >
-                                <Play className="h-5 w-5 fill-current" /> Start
-                            </button>
-                            <button
-                                onClick={() => handleControl("STOP_WATER")}
-                                disabled={!isIrrigating}
-                                className="flex items-center justify-center gap-2 h-14 rounded-xl bg-destructive text-destructive-foreground font-medium disabled:opacity-50 hover:bg-destructive/90 transition-all"
-                            >
-                                <Square className="h-5 w-5 fill-current" /> Stop
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="p-4 rounded-xl bg-muted/30 border border-muted text-center text-sm text-muted-foreground">
-                            System is in <strong>Automatic Mode</strong>. Switches to manual to override.
-                        </div>
-                    )}
-
-                    <div className="mt-4 pt-4 border-t border-border/50">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Live Feed Active</h4>
-                        <div className="flex gap-2 text-xs text-muted-foreground">
-                            Connected to AWS IoT Core + DynamoDB. UI will automatically sync.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Information / Thresholds Display */}
-            <div className="glass-panel p-6 rounded-3xl">
-                <h3 className="text-lg font-bold mb-4">Configuration: Tomato (Zone A)</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="p-4 rounded-2xl bg-card border border-border">
-                        <span className="text-xs text-muted-foreground uppercase font-bold">Min Threshold</span>
-                        <div className="text-2xl font-mono mt-1 text-amber-500">{MIN_THRESHOLD}%</div>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-card border border-border">
-                        <span className="text-xs text-muted-foreground uppercase font-bold">Max Threshold</span>
-                        <div className="text-2xl font-mono mt-1 text-blue-500">{MAX_THRESHOLD}%</div>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-card border border-border">
-                        <span className="text-xs text-muted-foreground uppercase font-bold">Last Update</span>
-                        <div className="text-lg mt-1">Just now</div>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-card border border-border">
-                        <span className="text-xs text-muted-foreground uppercase font-bold">Cloud Service</span>
-                        <div className="flex items-center gap-2 mt-1">
-                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-sm font-medium">AWS IoT Connected</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
->>>>>>> d7ad833383c7651a2999c01d70272c99c3b1a484
         </div>
 
         {/* Mode toggle — styled like EaseHealth's segment control */}
@@ -387,7 +281,7 @@ export default function DashboardPage() {
           {!autoMode ? (
             <div className="space-y-3 flex-1">
               <button
-                onClick={() => setIsIrrigating(true)}
+                onClick={() => handleControl("START_WATER")}
                 disabled={isIrrigating}
                 className="btn-primary w-full h-12 text-sm"
               >
@@ -395,7 +289,7 @@ export default function DashboardPage() {
                 Start Irrigation
               </button>
               <button
-                onClick={() => setIsIrrigating(false)}
+                onClick={() => handleControl("STOP_WATER")}
                 disabled={!isIrrigating}
                 className="w-full h-12 rounded-xl text-sm font-semibold transition-all"
                 style={{
