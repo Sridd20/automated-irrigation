@@ -1,0 +1,6 @@
+# Ignore ESP32 secrets and certificates
+hardware/esp32/secrets.h
+aws certificate keys/
+
+# Editor configs
+**/.clangd
