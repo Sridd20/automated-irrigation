@@ -3,6 +3,13 @@
 import { motion } from "framer-motion";
 import { Clock, CheckCircle2, AlertTriangle, Droplets, Filter, Download } from "lucide-react";
 
+interface LogEntry {
+  id: string;
+  action: string;
+  moisture: number;
+  timestamp: string;
+  zone: string;
+}
 const LOGS = [
   { id: 1, type: "success", message: "Irrigation started in Zone A — soil moisture below threshold", time: "2 min ago", detail: "Moisture: 28% → Auto-trigger", zone: "A" },
   { id: 2, type: "info", message: "Sensor reading verified: 65% moisture", time: "15 min ago", detail: "AWS IoT Shadow updated", zone: "A" },
