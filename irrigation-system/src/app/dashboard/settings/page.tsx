@@ -12,9 +12,9 @@ const sections = [
     color: "#2563eb",
     bg: "#eff6ff",
     fields: [
-      { label: "IoT Endpoint", value: "a1b2c3d4e5-ats.iot.us-east-1.amazonaws.com", type: "text" },
-      { label: "Thing Name", value: "ecoflow-zone-a", type: "text" },
-      { label: "Region", value: "us-east-1", type: "text" },
+      { label: "IoT Endpoint", value: process.env.NEXT_PUBLIC_AWS_IOT_ENDPOINT || "", type: "text", placeholder: "xxxx-ats.iot.ap-south-1.amazonaws.com" },
+      { label: "Thing Name", value: "esp32-irrigation-node", type: "text", placeholder: "your-thing-name" },
+      { label: "Region", value: process.env.NEXT_PUBLIC_AWS_REGION || "ap-south-1", type: "text", placeholder: "ap-south-1" },
     ],
   },
   {
@@ -25,9 +25,9 @@ const sections = [
     color: "#2d7a4f",
     bg: "#e8f5ee",
     fields: [
-      { label: "Default Min Threshold (%)", value: "30", type: "number" },
-      { label: "Default Max Threshold (%)", value: "80", type: "number" },
-      { label: "Check Interval (seconds)", value: "30", type: "number" },
+      { label: "Default Min Threshold (%)", value: "30", type: "number", placeholder: "30" },
+      { label: "Default Max Threshold (%)", value: "80", type: "number", placeholder: "80" },
+      { label: "Check Interval (seconds)", value: "3", type: "number", placeholder: "3" },
     ],
   },
   {
@@ -38,8 +38,8 @@ const sections = [
     color: "#d97706",
     bg: "#fffbeb",
     fields: [
-      { label: "Alert Email", value: "admin@ecoflow.com", type: "email" },
-      { label: "SMS Number", value: "+1 555 000 1234", type: "text" },
+      { label: "Alert Email", value: "", type: "email", placeholder: "your@email.com" },
+      { label: "SMS Number", value: "", type: "text", placeholder: "+91 XXXXX XXXXX" },
     ],
   },
 ];
@@ -109,6 +109,7 @@ export default function SettingsPage() {
                 <input
                   type={field.type}
                   defaultValue={field.value}
+                  placeholder={(field as any).placeholder || ""}
                   className="ease-input text-sm"
                 />
               </div>

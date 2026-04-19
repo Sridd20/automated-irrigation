@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import AWS from "aws-sdk";
 
 const iot = new AWS.IotData({
-  endpoint: process.env.NEXT_PUBLIC_AWS_IOT_ENDPOINT,
-  region: process.env.AWS_REGION || "ap-south-1",
-  credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  }
+    endpoint: process.env.NEXT_PUBLIC_AWS_IOT_ENDPOINT,
+    region: process.env.AWS_REGION || "ap-south-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    }
 });
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
             // NodeId(0x1A) + NodeCmd(0x1B) + ValveOff(0x12) + MotorOff(0x14)
             packet = [0x1A, 0x1B, 0x12, 0x14];
         }
-        
+
         const packetHex = Buffer.from(packet).toString('hex').toUpperCase();
 
         await iot.publish({
