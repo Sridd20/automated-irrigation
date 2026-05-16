@@ -1,6 +1,26 @@
-# Ignore ESP32 secrets and certificates
+# ─── ESP32 Secrets & Certificates ──────────────────────────────────────────
 hardware/esp32/secrets.h
 aws certificate keys/
 
-# Editor configs
+# ─── Project Junk / Editor Artifacts ───────────────────────────────────────
 **/.clangd
+Project Backups/
+*.pdsprj
+*.pdsprj.bak
+
+# ─── Web App (irrigation-system) ────────────────────────────────────────────
+irrigation-system/node_modules/
+irrigation-system/.next/
+irrigation-system/out/
+irrigation-system/build/
+irrigation-system/.env.local
+irrigation-system/*.tsbuildinfo
+irrigation-system/next-env.d.ts
+irrigation-system/fix-globals.ps1
+irrigation-system/wave_css.txt
+irrigation-system/gen-wave.js
+
+# ─── OS & Misc ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

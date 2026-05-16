@@ -2,6 +2,8 @@
 
 A full-stack, IoT-integrated smart irrigation system combining an **ESP32 hardware node** with a **Next.js cloud dashboard**. The system autonomously monitors soil moisture, controls a solenoid valve in real time, publishes telemetry to **AWS IoT Core**, and displays live weather data — all managed from a responsive web interface.
 
+📊 **[See live results, sample payloads & observations →](RESULTS.md)**
+
 ---
 
 ## ✨ Features
@@ -180,9 +182,11 @@ Commands from the dashboard are encoded as multi-byte hex strings:
 - Node.js v20+
 - Arduino IDE with ESP32 board support
 - AWS Account with:
-  - **IoT Core** Thing (`esp32-irrigation-node`) with certificates
-  - **DynamoDB** table named `IrrigationStatus`
-  - **Lambda** function routing IoT messages to DynamoDB
+  - **IoT Core** Thing (`esp32-irrigation-node`) with X.509 certificates
+  - **DynamoDB** table `IrrigationStatus` — stores the latest sensor reading per zone
+  - **DynamoDB** table `IrrigationLogs` — stores historical moisture records
+  - **Lambda** function with an IoT Rule trigger to write incoming MQTT messages to both tables
+  - **IAM user** with `dynamodb:Scan` on both tables and `iot:Publish` on `esp_32/Node_Command`
 
 ### 1. Clone & Install (Web Dashboard)
 
@@ -193,15 +197,20 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create `irrigation-system/.env.local`:
+Copy the template and fill in your values:
+```bash
+cp irrigation-system/.env.example irrigation-system/.env.local
+```
+
+`irrigation-system/.env.local`:
 ```env
 # AWS Credentials (IAM user with DynamoDB + IoT permissions)
 AWS_REGION=ap-south-1
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_ACCESS_KEY_ID=YOUR_IAM_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_IAM_SECRET_ACCESS_KEY
 
-# AWS IoT Core endpoint (for remote control API)
-NEXT_PUBLIC_AWS_IOT_ENDPOINT=your-endpoint.iot.ap-south-1.amazonaws.com
+# AWS IoT Core endpoint — found under IoT Core → Settings → Device data endpoint
+NEXT_PUBLIC_AWS_IOT_ENDPOINT=xxxxxxxxxxxxxx-ats.iot.ap-south-1.amazonaws.com
 
 # Weather fallback coordinates (used if ESP32 geolocation is unavailable)
 WEATHER_LAT=12.9716
